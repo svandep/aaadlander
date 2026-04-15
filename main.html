@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Pulse Board Dashboard</title>
+	<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+	<div class="app">
+		<aside class="sidebar">
+			<div class="brand">
+				<div class="brand-mark">P</div>
+				<div>
+					<h1>Pulse Board</h1>
+					<p>Realtime overzicht</p>
+				</div>
+			</div>
+
+			<nav class="menu" aria-label="Hoofdnavigatie">
+				<a class="active" href="#overview"><span class="menu-icon">⌂</span> Dashboard</a>
+				<a href="#analytics"><span class="menu-icon">◌</span> Analytics</a>
+				<a href="#orders"><span class="menu-icon">▦</span> Orders</a>
+				<a href="#customers"><span class="menu-icon">◒</span> Klanten</a>
+				<a href="#settings"><span class="menu-icon">⚙</span> Instellingen</a>
+			</nav>
+
+			<div class="sidebar-card">
+				<span class="eyebrow">Live status</span>
+				<h3 class="sidebar-title">Alle systemen draaien soepel</h3>
+				<p>Je team heeft vandaag al 18 belangrijke acties verwerkt en de responstijd blijft onder de doelwaarde.</p>
+				<a class="sidebar-cta" href="#report">Bekijk rapport</a>
+			</div>
+		</aside>
+
+		<main class="main" id="overview">
+			<div class="topbar">
+				<label class="search" aria-label="Zoeken">
+					<span class="search-icon">⌕</span>
+					<input type="search" placeholder="Zoek klant, order of inzicht..." />
+				</label>
+
+				<div class="toolbar">
+					<span class="pill" data-role="today-date">Vandaag</span>
+					<a class="button" href="#settings">Export</a>
+					<a class="button primary" href="#analytics">Nieuwe analyse</a>
+				</div>
+			</div>
+
+			<section class="hero">
+				<div class="hero-panel">
+					<span class="eyebrow">Operations overview</span>
+					<h2>Een dashboard dat in één oogopslag laat zien wat ertoe doet.</h2>
+					<p>
+						Volg omzet, klantactiviteit en teamperformance in een helder scherm met prioriteiten,
+						trends en snelle acties. De layout is gemaakt om data leesbaar en direct bruikbaar te maken.
+					</p>
+					<div class="hero-actions">
+						<a class="button primary" href="#orders">Open orders</a>
+						<a class="button" href="#customers">Bekijk klanten</a>
+					</div>
+				</div>
+
+				<div class="mini-grid">
+					<article class="mini-card">
+						<span class="eyebrow">Conversion</span>
+						<strong>24.8%</strong>
+						<p class="trend">+3.2% sinds vorige week</p>
+					</article>
+					<article class="mini-card">
+						<span class="eyebrow">Response time</span>
+						<strong>1m 12s</strong>
+						<p class="trend">-18s verbeterd</p>
+					</article>
+				</div>
+			</section>
+
+			<section class="stats">
+				<article class="stat">
+					<div class="stat-top"><span>Omzet</span><span class="status success">+12.4%</span></div>
+					<strong>€48.920</strong>
+					<span>Deze maand gegroeid door hogere orderwaarde</span>
+				</article>
+				<article class="stat">
+					<div class="stat-top"><span>Nieuwe leads</span><span class="status warn">+5.1%</span></div>
+					<strong>1.284</strong>
+					<span>Topkanaal: organische zoekopdrachten</span>
+				</article>
+				<article class="stat">
+					<div class="stat-top"><span>Actieve users</span><span class="status success">+8.8%</span></div>
+					<strong>8.432</strong>
+					<span>Dagelijks terugkerend publiek stijgt</span>
+				</article>
+				<article class="stat">
+					<div class="stat-top"><span>Open issues</span><span class="status danger">-2</span></div>
+					<strong>7</strong>
+					<span>Drie tickets zijn vandaag opgelost</span>
+				</article>
+			</section>
+
+			<section class="content-grid">
+				<article class="panel" id="analytics">
+					<div class="panel-head">
+						<div>
+							<h3>Performance trend</h3>
+							<p>Wekelijkse output en momentum over de laatste 8 weken</p>
+						</div>
+						<a class="pill" href="#report">Details</a>
+					</div>
+
+					<div class="chart-wrap">
+						<div class="chart" aria-label="Grafiek met prestatiegegevens">
+							<svg viewBox="0 0 900 260" role="img" aria-label="Omzet en engagement grafiek">
+								<defs>
+									<linearGradient id="lineA" x1="0" x2="1">
+										<stop offset="0%" stop-color="#ffb347" />
+										<stop offset="100%" stop-color="#ff6b8a" />
+									</linearGradient>
+									<linearGradient id="lineB" x1="0" x2="1">
+										<stop offset="0%" stop-color="#6ee7d8" />
+										<stop offset="100%" stop-color="#89a8ff" />
+									</linearGradient>
+								</defs>
+
+								<path d="M40 194 C110 170, 150 66, 220 78 S360 154, 430 122 S565 44, 640 74 S770 160, 860 92" fill="none" stroke="url(#lineA)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+								<path d="M40 216 C110 198, 170 188, 220 164 S350 88, 430 96 S560 160, 640 136 S770 70, 860 118" fill="none" stroke="url(#lineB)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+
+								<g fill="#eff4ff">
+									<circle cx="40" cy="194" r="5" />
+									<circle cx="220" cy="78" r="5" />
+									<circle cx="430" cy="122" r="5" />
+									<circle cx="640" cy="74" r="5" />
+									<circle cx="860" cy="92" r="5" />
+								</g>
+
+								<g fill="#6ee7d8">
+									<circle cx="40" cy="216" r="5" />
+									<circle cx="220" cy="164" r="5" />
+									<circle cx="430" cy="96" r="5" />
+									<circle cx="640" cy="136" r="5" />
+									<circle cx="860" cy="118" r="5" />
+								</g>
+							</svg>
+							<div class="legend">
+								<span class="legend-item"><span class="swatch" style="background: var(--accent);"></span> Omzet</span>
+								<span class="legend-item"><span class="swatch" style="background: var(--accent-2);"></span> Engagement</span>
+								<span class="legend-item"><span class="swatch" style="background: var(--accent-3);"></span> Forecast</span>
+							</div>
+						</div>
+
+						<div class="table" id="orders">
+							<div class="panel-head table-head">
+								<div>
+									<h3>Recente orders</h3>
+									<p>Vier nieuwste transacties en hun status</p>
+								</div>
+							</div>
+
+							<table>
+								<thead>
+									<tr>
+										<th>Klant</th>
+										<th>Product</th>
+										<th>Waarde</th>
+										<th>Status</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td data-label="Klant">Nova Studio</td>
+										<td data-label="Product">Growth pack</td>
+										<td data-label="Waarde">€2.450</td>
+										<td data-label="Status"><span class="status success">Betaald</span></td>
+									</tr>
+									<tr>
+										<td data-label="Klant">Urban Peak</td>
+										<td data-label="Product">Analytics add-on</td>
+										<td data-label="Waarde">€1.180</td>
+										<td data-label="Status"><span class="status warn">In behandeling</span></td>
+									</tr>
+									<tr>
+										<td data-label="Klant">Northwave</td>
+										<td data-label="Product">Support suite</td>
+										<td data-label="Waarde">€3.900</td>
+										<td data-label="Status"><span class="status success">Betaald</span></td>
+									</tr>
+									<tr>
+										<td data-label="Klant">Atlas Co.</td>
+										<td data-label="Product">Premium onboarding</td>
+										<td data-label="Waarde">€860</td>
+										<td data-label="Status"><span class="status danger">Achterstallig</span></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</article>
+
+				<aside class="panel" id="customers">
+					<div class="panel-head">
+						<div>
+							<h3>Today at a glance</h3>
+							<p>Belangrijkste acties en focuspunten</p>
+						</div>
+					</div>
+
+					<div class="activity">
+						<div class="activity-item">
+							<div class="activity-badge">A</div>
+							<div>
+								<h4>Nieuwe demo-aanvraag</h4>
+								<p>Een lead uit de zorgsector vraagt een demo aan voor volgende week.</p>
+							</div>
+						</div>
+						<div class="activity-item">
+							<div class="activity-badge badge-accent">B</div>
+							<div>
+								<h4>Campagne presteert boven verwachting</h4>
+								<p>De voorjaarspost heeft 31% meer clicks dan de vorige batch.</p>
+							</div>
+						</div>
+						<div class="activity-item">
+							<div class="activity-badge badge-danger">C</div>
+							<div>
+								<h4>Support backlog moet omlaag</h4>
+								<p>Drie tickets wachten langer dan 48 uur en vragen prioriteit.</p>
+							</div>
+						</div>
+					</div>
+
+					<div style="margin-top: 18px;" class="stack">
+						<div>
+							<div class="metric-row">
+								<div class="metric-label">
+									<h4>Marketing budget</h4>
+									<p>68% benut</p>
+								</div>
+								<strong>€13.600</strong>
+							</div>
+							<div class="bar"><span style="width: 68%;"></span></div>
+						</div>
+
+						<div>
+							<div class="metric-row">
+								<div class="metric-label">
+									<h4>Customer success</h4>
+									<p>84% voltooid</p>
+								</div>
+								<strong>84%</strong>
+							</div>
+							<div class="bar"><span style="width: 84%; background: linear-gradient(90deg, var(--accent-2), var(--accent-3));"></span></div>
+						</div>
+
+						<div>
+							<div class="metric-row">
+								<div class="metric-label">
+									<h4>Launch readiness</h4>
+									<p>91% klaar voor release</p>
+								</div>
+								<strong>91%</strong>
+							</div>
+							<div class="bar"><span style="width: 91%; background: linear-gradient(90deg, var(--accent), var(--danger));"></span></div>
+						</div>
+					</div>
+
+					<p class="footer-note" id="report">Gemaakt als compacte, responsieve dashboard-startpagina die je eenvoudig kunt uitbreiden met echte data.</p>
+				</aside>
+			</section>
+		</main>
+	</div>
+
+	<script src="script.js"></script>
+</body>
+</html>
