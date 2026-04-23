@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Arduino Light Control</title>
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<main class="app">
+		<p class="eyebrow">Deep Space Relay</p>
+		<h1>Arduino Light Control</h1>
+		<p class="subhead">Control the beacon from mission control.</p>
+
+		<p class="endpoint">Link: ws://145.49.127.250:1880/ws/groep12</p>
+
+		<div class="status-row">
+			<span class="dot" id="statusDot" aria-hidden="true"></span>
+			<span id="statusText">Connecting...</span>
+		</div>
+
+		<button id="toggleBtn" disabled>Turn Light ON</button>
+	</main>
+
+	<script src="scripts.js"></script>
+</body>
+</html>
