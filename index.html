@@ -3,14 +3,14 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Arduino Light Control</title>
+	<title>Arduino Weight Monitor</title>
 	<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 	<main class="app">
 		<p class="eyebrow">Deep Space Relay</p>
-		<h1>Arduino Light Control</h1>
-		<p class="subhead">Control the beacon from mission control.</p>
+		<h1>Loadcell Monitor</h1>
+		<p class="subhead">Live weight data from the satellite link.</p>
 
 		<p class="endpoint">Link: ws://145.49.127.250:1880/ws/groep12</p>
 
@@ -19,7 +19,11 @@
 			<span id="statusText">Connecting...</span>
 		</div>
 
-		<button id="toggleBtn" disabled>Turn Light ON</button>
+		<div class="weight-card">
+			<p class="label">Current weight</p>
+			<div id="weightValue">-- g</div>
+			<p id="lastUpdate">Waiting for data...</p>
+		</div>
 	</main>
 
 	<script src="scripts.js"></script>

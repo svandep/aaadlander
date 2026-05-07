@@ -197,3 +197,33 @@ button.on {
 		transform: translate3d(0, 0, 0);
 	}
 }
+.weight-card {
+	position: relative;
+	z-index: 1;
+	text-align: center;
+	padding: 1.2rem;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(143, 181, 255, 0.14);
+}
+
+.label {
+	margin: 0 0 0.4rem;
+	color: #99abd0;
+	font-size: 0.85rem;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+}
+
+#weightValue {
+	font-size: clamp(3rem, 12vw, 5rem);
+	font-weight: 800;
+	color: #f4f8ff;
+	line-height: 1;
+}
+
+#lastUpdate {
+	margin: 0.8rem 0 0;
+	color: #b8c9e8;
+	font-size: 0.9rem;
+}
