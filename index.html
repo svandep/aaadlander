@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Deep Space Relay</title>
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<div class="bg-glow"></div>
+	<div class="bg-horizon"></div>
+	<div class="lunar-background"></div>
+
+	<section class="shell">
+		<header class="header">
+			<div class="header-left">
+				<div class="logo-frame">
+					<img class="logo-image" src="Assets/logo.png" alt="Bol-E-Vard logo">
+				</div>
+				<div class="header-titles">
+					<p class="eyebrow">DEEP SPACE RELAY</p>
+					<h1>LOADCELL MONITOR</h1>
+				</div>
+			</div>
+			<div class="header-right">
+				<div class="status-indicator">
+					<span class="status-dot" id="statusDot" aria-hidden="true"></span>
+					<span id="statusText">Connecting...</span>
+				</div>
+				<button class="menu-btn" aria-label="Open menu">☰</button>
+			</div>
+		</header>
+
+		<main class="app">
+			<section class="panel controls-section">
+				<h2>CONTROLS</h2>
+				<div class="controls-list">
+					<div class="control-row">
+						<button class="control-btn" id="btnQ">Q</button>
+						<p>Arm In/Uit</p>
+					</div>
+					<div class="control-row">
+						<button class="control-btn" id="btnUp">⬆</button>
+						<p>Hefmast omhoog</p>
+					</div>
+					<div class="control-row">
+						<button class="control-btn" id="btnDown">⬇</button>
+						<p>Hefmast omlaag</p>
+					</div>
+					<div class="control-row">
+						<button class="control-btn" id="btnE">E</button>
+						<p>Grijper open/dicht</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="panel monitor-section">
+				<h2>LOADCELL MONITOR</h2>
+				<div class="weight-card">
+					<p class="card-label">CURRENT WEIGHT</p>
+					<div class="weight-display">
+						<span id="weightValue">--</span>
+						<span class="weight-unit">g</span>
+					</div>
+					<p class="update-status" id="lastUpdate">Waiting for data...</p>
+				</div>
+				<button class="spacebar-btn" id="spacebarBtn" type="button">SPACEBAR</button>
+			</section>
+
+			<section class="panel stored-section">
+				<h2>STORED WEIGHTS</h2>
+				<div class="stored-list" id="storedList"></div>
+			</section>
+		</main>
+
+		<footer class="footer">
+			<div class="footer-left">
+				<span class="signal-dot" aria-hidden="true"></span>
+				<span>Satellite link active</span>
+			</div>
+			<span id="endpointText"></span>
+		</footer>
+	</section>
+
+	<script src="scripts.js"></script>
+</body>
+</html>
