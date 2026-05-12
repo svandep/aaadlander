@@ -26,17 +26,19 @@ if ($jsonError !== JSON_ERROR_NONE) {
 	]);
 	exit;
 }
+
 $gewichtwaarde = isset($input["gewichtwaarde"]) ? (int) $input["gewichtwaarde"] : null;
+$datumwaarde = isset($input["datumwaarde"]) ? $input["datumwaarde"] : null;
 $notitie = isset($input["notitie"]) ? trim((string) $input["notitie"]) : null;
 
-if ($gewichtwaarde === null || $gewichtwaarde <= 0) {
+if ($gewichtwaarde === null || $gewichtwaarde <= 0 || !$datumwaarde) {
+	http_response_code(400);
 	echo json_encode([
 		"success" => false,
-		"message" => "Invalid weight value."
+		"message" => "Invalid note payload.",
 	]);
 	exit;
 }
-
 
 if ($notitie !== null && $notitie !== "") {
 	$notitie = substr($notitie, 0, 30);
@@ -45,20 +47,25 @@ if ($notitie !== null && $notitie !== "") {
 }
 
 try {
-	$stmt = $pdo->prepare("INSERT INTO Meting (gewichtwaarde, datumwaarde, notitie) VALUES (:gewichtwaarde, NOW(), :notitie)");
+	$stmt = $pdo->prepare("UPDATE Meting SET notitie = :notitie WHERE gewichtwaarde = :gewichtwaarde AND datumwaarde = :datumwaarde");
 	$stmt->bindValue(":gewichtwaarde", $gewichtwaarde, PDO::PARAM_INT);
+	$stmt->bindValue(":datumwaarde", $datumwaarde, PDO::PARAM_STR);
 	if ($notitie === null) {
 		$stmt->bindValue(":notitie", null, PDO::PARAM_NULL);
 	} else {
 		$stmt->bindValue(":notitie", $notitie, PDO::PARAM_STR);
 	}
 	$stmt->execute();
-	echo json_encode(["success" => true]);
+
+	echo json_encode([
+		"success" => true,
+		"updated" => $stmt->rowCount(),
+	]);
 } catch (PDOException $error) {
 	http_response_code(500);
 	echo json_encode([
 		"success" => false,
-		"message" => "Database insert failed.",
+		"message" => "Database update failed.",
 		"details" => $error->getMessage(),
 	]);
 }

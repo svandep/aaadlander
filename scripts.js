@@ -92,11 +92,12 @@ function addStoredWeight(entry) {
 
 function formatDateLabel(dateString) {
 	if (!dateString) return "";
-	const date = new Date(`${dateString}T00:00:00`);
+	const normalized = dateString.includes(" ") ? dateString.replace(" ", "T") : dateString;
+	const date = new Date(normalized);
 	if (Number.isNaN(date.getTime())) {
 		return dateString;
 	}
-	return date.toLocaleDateString();
+	return date.toLocaleString();
 }
 
 function closeAllMenus(except) {
@@ -121,19 +122,23 @@ function updateStoredList() {
 		const weight = Number(entry.gewichtwaarde);
 		const dateValue = entry.datumwaarde || "";
 		const dateLabel = formatDateLabel(dateValue);
+		const noteValue = (entry.notitie || "").trim();
 		const item = document.createElement("div");
 		item.className = "stored-item";
 		item.dataset.weight = String(weight);
 		item.dataset.date = dateValue;
+		item.dataset.note = noteValue;
 		item.innerHTML = `
 			<div class="stored-info">
 				<span class="weight-value">${weight} g</span>
 				<span class="weight-date">${dateLabel}</span>
+				${noteValue ? `<span class="weight-note">${noteValue}</span>` : ""}
 			</div>
 			<div class="menu-wrap">
 				<button class="menu-icon" aria-label="Options" aria-expanded="false">⋮</button>
 				<div class="menu-dropdown" role="menu">
-					<button class="menu-action" data-action="delete" role="menuitem">Delete</button>
+					<button class="menu-action menu-action-note" data-action="note" role="menuitem">Add note</button>
+					<button class="menu-action menu-action-delete" data-action="delete" role="menuitem">Delete</button>
 				</div>
 			</div>
 		`;
@@ -177,6 +182,33 @@ async function deleteStoredWeight(weight, dateValue) {
 	} catch (error) {
 		console.log("Failed to delete weight", error);
 		lastUpdate.textContent = "Delete failed.";
+	}
+}
+
+async function updateStoredNote(weight, dateValue, noteValue) {
+	try {
+		const response = await fetch(`${API_BASE}/update_note.php`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				gewichtwaarde: Number(weight),
+				datumwaarde: dateValue,
+				notitie: noteValue,
+			}),
+		});
+
+		const data = await response.json();
+		if (data.success) {
+			lastUpdate.textContent = "Note saved.";
+			await loadStoredWeights();
+		} else {
+			lastUpdate.textContent = data.message || "Failed to save note.";
+		}
+	} catch (error) {
+		console.log("Failed to save note", error);
+		lastUpdate.textContent = "Note save failed.";
 	}
 }
 
@@ -248,6 +280,19 @@ storedList.addEventListener("click", (event) => {
 		const item = actionButton.closest(".stored-item");
 		closeAllMenus();
 		deleteStoredWeight(item.dataset.weight, item.dataset.date);
+	}
+
+	if (actionButton && actionButton.dataset.action === "note") {
+		const item = actionButton.closest(".stored-item");
+		const currentNote = item.dataset.note || "";
+		const noteInput = window.prompt("Note (max 30 chars):", currentNote);
+		closeAllMenus();
+		if (noteInput === null) {
+			return;
+		}
+		const trimmedNote = noteInput.trim().slice(0, 30);
+		const noteValue = trimmedNote.length ? trimmedNote : null;
+		updateStoredNote(item.dataset.weight, item.dataset.date, noteValue);
 	}
 });
 

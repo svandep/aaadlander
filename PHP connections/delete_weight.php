@@ -40,7 +40,7 @@ if ($gewichtwaarde === null || $gewichtwaarde <= 0 || !$datumwaarde) {
 }
 
 try {
-	$stmt = $pdo->prepare("DELETE FROM meting WHERE gewichtwaarde = :gewichtwaarde AND datumwaarde = :datumwaarde");
+	$stmt = $pdo->prepare("DELETE FROM Meting WHERE gewichtwaarde = :gewichtwaarde AND datumwaarde = :datumwaarde");
 	$stmt->execute([
 		"gewichtwaarde" => $gewichtwaarde,
 		"datumwaarde" => $datumwaarde,

@@ -13,7 +13,7 @@ try {
 	exit;
 }
 
-$stmt = $pdo->query("SELECT gewichtwaarde, datumwaarde FROM meting ORDER BY datumwaarde DESC, gewichtwaarde DESC LIMIT 6");
+$stmt = $pdo->query("SELECT gewichtwaarde, datumwaarde, notitie FROM Meting ORDER BY datumwaarde DESC, gewichtwaarde DESC LIMIT 6");
 $weights = $stmt->fetchAll();
 
 echo json_encode(["weights" => $weights]);
