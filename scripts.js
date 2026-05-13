@@ -7,8 +7,12 @@ const lastUpdate = document.getElementById("lastUpdate");
 const storedList = document.getElementById("storedList");
 const endpointText = document.getElementById("endpointText");
 const spacebarBtn = document.getElementById("spacebarBtn");
+const logoFrame = document.getElementById("logoFrame");
+const footerSignalDot = document.getElementById("footerSignalDot");
+const footerSignalText = document.getElementById("footerSignalText");
 
 const API_BASE = "PHP%20connections";
+const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 
 // Control buttons
 const btnQ = document.getElementById("btnQ");
@@ -19,6 +23,11 @@ const btnE = document.getElementById("btnE");
 let socket = null;
 let reconnectTimer = null;
 let storedWeights = [];
+let logoClickCount = 0;
+let logoClickTimer = null;
+let staleTimer = null;
+const STALE_TIMEOUT_MS = 30000;
+let hasReceivedData = false;
 
 function setStatus(state, text) {
 	statusText.textContent = text;
@@ -26,6 +35,28 @@ function setStatus(state, text) {
 	if (state) {
 		statusDot.classList.add(state);
 	}
+	updateFooterSignal(state);
+}
+
+function updateFooterSignal(state) {
+	if (!footerSignalDot || !footerSignalText) return;
+
+	footerSignalDot.className = "signal-dot";
+	if (state) {
+		footerSignalDot.classList.add(state);
+	}
+
+	if (state === "is-error") {
+		footerSignalText.textContent = "Satellite link inactive";
+		return;
+	}
+
+	if (state === "is-connecting") {
+		footerSignalText.textContent = "Satellite link connecting";
+		return;
+	}
+
+	footerSignalText.textContent = "Satellite link active";
 }
 
 function scheduleReconnect() {
@@ -37,8 +68,27 @@ function scheduleReconnect() {
 	}, 2000);
 }
 
+function startStaleTimer() {
+	if (staleTimer) {
+		clearTimeout(staleTimer);
+	}
+
+	staleTimer = setTimeout(() => {
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			setStatus("is-error", "Disconnected");
+		}
+	}, STALE_TIMEOUT_MS);
+}
+
+function stopStaleTimer() {
+	if (!staleTimer) return;
+	clearTimeout(staleTimer);
+	staleTimer = null;
+}
+
 function connectWebSocket() {
 	setStatus("is-connecting", "Connecting...");
+	hasReceivedData = false;
 
 	try {
 		socket = new WebSocket(WS_URL);
@@ -49,12 +99,19 @@ function connectWebSocket() {
 	}
 
 	socket.addEventListener("open", () => {
-		setStatus("", "Connected");
+		setStatus("is-connecting", "Connecting...");
 		clearTimeout(reconnectTimer);
 		reconnectTimer = null;
+		startStaleTimer();
 	});
 
 	socket.addEventListener("message", (event) => {
+		startStaleTimer();
+		if (!hasReceivedData) {
+			hasReceivedData = true;
+			setStatus("", "Connected");
+		}
+
 		try {
 			const data = JSON.parse(event.data);
 
@@ -70,12 +127,32 @@ function connectWebSocket() {
 
 	socket.addEventListener("close", () => {
 		setStatus("is-error", "Disconnected");
+		stopStaleTimer();
 		scheduleReconnect();
 	});
 
 	socket.addEventListener("error", () => {
 		setStatus("is-error", "Error");
+		stopStaleTimer();
 	});
+}
+
+function handleLogoClick() {
+	logoClickCount += 1;
+	if (logoClickTimer) {
+		clearTimeout(logoClickTimer);
+	}
+
+	if (logoClickCount >= 3) {
+		logoClickCount = 0;
+		window.location.href = EASTER_EGG_URL;
+		return;
+	}
+
+	logoClickTimer = setTimeout(() => {
+		logoClickCount = 0;
+		logoClickTimer = null;
+	}, 900);
 }
 
 function addStoredWeight(entry) {
@@ -262,6 +339,9 @@ btnUp.addEventListener("click", () => handleControl("UP"));
 btnDown.addEventListener("click", () => handleControl("DOWN"));
 btnE.addEventListener("click", () => handleControl("E"));
 spacebarBtn.addEventListener("click", () => saveCurrentWeight());
+if (logoFrame) {
+	logoFrame.addEventListener("click", handleLogoClick);
+}
 
 storedList.addEventListener("click", (event) => {
 	const menuButton = event.target.closest(".menu-icon");

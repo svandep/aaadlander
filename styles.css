@@ -459,6 +459,16 @@ body::before {
 	box-shadow: 0 0 12px rgba(120, 200, 255, 0.7);
 }
 
+.signal-dot.is-connecting {
+	background: rgba(255, 213, 90, 0.9);
+	box-shadow: 0 0 12px rgba(255, 213, 90, 0.8);
+}
+
+.signal-dot.is-error {
+	background: rgba(255, 93, 122, 0.9);
+	box-shadow: 0 0 12px rgba(255, 93, 122, 0.85);
+}
+
 @media (max-width: 1100px) {
 	.app {
 		grid-template-columns: 1fr 1fr;
