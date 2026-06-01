@@ -1,4 +1,5 @@
 const WS_URL = "ws://145.49.127.250:1880/ws/groep12";
+const REST_URL = "http://145.49.127.250:1880/groep12";
 
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
@@ -14,11 +15,27 @@ const footerSignalText = document.getElementById("footerSignalText");
 const API_BASE = "PHP%20connections";
 const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 
+const CONTROL_CHANNELS = {
+	SPINDLE: 2,
+	ARM: 3,
+	GRIPPER: 4,
+};
+
+const CONTROL_VALUES = {
+	SPINDLE_SPEED: 127,
+	ARM_OUT: 90,
+	ARM_IN: 0,
+	GRIPPER_OPEN: 45,
+	GRIPPER_CLOSE: 90,
+};
+
 // Control buttons
-const btnQ = document.getElementById("btnQ");
-const btnUp = document.getElementById("btnUp");
-const btnDown = document.getElementById("btnDown");
-const btnE = document.getElementById("btnE");
+const btnArmOut = document.getElementById("btnArmOut");
+const btnArmIn = document.getElementById("btnArmIn");
+const btnSpindleUp = document.getElementById("btnSpindleUp");
+const btnSpindleDown = document.getElementById("btnSpindleDown");
+const btnGripperOpen = document.getElementById("btnGripperOpen");
+const btnGripperClose = document.getElementById("btnGripperClose");
 
 let socket = null;
 let reconnectTimer = null;
@@ -26,7 +43,7 @@ let storedWeights = [];
 let logoClickCount = 0;
 let logoClickTimer = null;
 let staleTimer = null;
-const STALE_TIMEOUT_MS = 30000;
+const STALE_TIMEOUT_MS = 10000;
 let hasReceivedData = false;
 
 function setStatus(state, text) {
@@ -112,17 +129,14 @@ function connectWebSocket() {
 			setStatus("", "Connected");
 		}
 
-		try {
-			const data = JSON.parse(event.data);
-
-			if (data.weight_1 !== undefined) {
-				const weight = Math.round(data.weight_1);
-				weightValue.textContent = `${weight}`;
-				lastUpdate.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
-			}
-		} catch (error) {
-			console.log("Invalid websocket message:", event.data);
+		const weight = parseWeightMessage(event.data);
+		if (weight !== null) {
+			weightValue.textContent = `${Math.round(weight)}`;
+			lastUpdate.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+			return;
 		}
+
+		console.log("Unhandled websocket message:", event.data);
 	});
 
 	socket.addEventListener("close", () => {
@@ -153,6 +167,77 @@ function handleLogoClick() {
 		logoClickCount = 0;
 		logoClickTimer = null;
 	}, 900);
+}
+
+function parseWeightMessage(message) {
+	if (typeof message === "string") {
+		const trimmed = message.trim();
+		if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+			try {
+				return parseWeightFromData(JSON.parse(trimmed));
+			} catch (error) {
+				return parseWeightFromString(trimmed);
+			}
+		}
+		return parseWeightFromString(trimmed);
+	}
+
+	return parseWeightFromData(message);
+}
+
+function parseWeightFromString(message) {
+	const match = message.match(/WEIGHT\s*:\s*([0-9]+(?:\.[0-9]+)?)/i);
+	if (match) {
+		return Number(match[1]);
+	}
+	return null;
+}
+
+function parseWeightFromData(data) {
+	if (!data) return null;
+
+	const directWeight =
+		data.weight_1 ??
+		data.weight ??
+		data.weight_g ??
+		data.gewichtwaarde ??
+		data.gewicht;
+
+	if (directWeight !== undefined && directWeight !== null) {
+		const weightNumber = Number(directWeight);
+		return Number.isNaN(weightNumber) ? null : weightNumber;
+	}
+
+	const payloadBytes = extractPayloadBytes(data.payload ?? data.lpp ?? data.bytes);
+	if (payloadBytes) {
+		return parseLppWeight(payloadBytes);
+	}
+
+	return null;
+}
+
+function extractPayloadBytes(payload) {
+	if (!payload) return null;
+	if (Array.isArray(payload)) return payload;
+	if (typeof payload === "string") {
+		try {
+			const binary = atob(payload);
+			return Array.from(binary, (char) => char.charCodeAt(0));
+		} catch (error) {
+			return null;
+		}
+	}
+	return null;
+}
+
+function parseLppWeight(bytes) {
+	const LPP_WEIGHT = 154;
+	for (let i = 0; i + 3 < bytes.length; i += 1) {
+		if (bytes[i + 1] === LPP_WEIGHT) {
+			return (bytes[i + 2] << 8) | bytes[i + 3];
+		}
+	}
+	return null;
 }
 
 function addStoredWeight(entry) {
@@ -325,19 +410,106 @@ async function saveCurrentWeight() {
 }
 
 // Control button handlers
-function handleControl(action) {
+function sendControl(action) {
 	console.log(`Control: ${action}`);
-	
-	if (socket && socket.readyState === WebSocket.OPEN) {
-		socket.send(JSON.stringify({ action: action }));
+	sendRestControl(action);
+}
+
+function encodeSpindle(direction, speed) {
+	const cappedSpeed = Math.max(0, Math.min(127, speed));
+	if (direction === "stop") return 0;
+	const directionBit = direction === "down" ? 0x80 : 0x00;
+	return directionBit | cappedSpeed;
+}
+
+function buildControlPayload(action) {
+	switch (action) {
+		case "SPINDLE_UP_START":
+			return {
+				[`digital_output_${CONTROL_CHANNELS.SPINDLE}`]: encodeSpindle(
+					"up",
+					CONTROL_VALUES.SPINDLE_SPEED
+				),
+			};
+		case "SPINDLE_DOWN_START":
+			return {
+				[`digital_output_${CONTROL_CHANNELS.SPINDLE}`]: encodeSpindle(
+					"down",
+					CONTROL_VALUES.SPINDLE_SPEED
+				),
+			};
+		case "SPINDLE_STOP":
+			return {
+				[`digital_output_${CONTROL_CHANNELS.SPINDLE}`]: encodeSpindle(
+					"stop",
+					0
+				),
+			};
+		case "ARM_OUT_START":
+			return { [`digital_output_${CONTROL_CHANNELS.ARM}`]: CONTROL_VALUES.ARM_OUT };
+		case "ARM_IN_START":
+			return { [`digital_output_${CONTROL_CHANNELS.ARM}`]: CONTROL_VALUES.ARM_IN };
+		case "ARM_STOP":
+			return { [`digital_output_${CONTROL_CHANNELS.ARM}`]: CONTROL_VALUES.ARM_IN };
+		case "GRIPPER_OPEN_START":
+			return { [`digital_output_${CONTROL_CHANNELS.GRIPPER}`]: CONTROL_VALUES.GRIPPER_OPEN };
+		case "GRIPPER_CLOSE_START":
+			return { [`digital_output_${CONTROL_CHANNELS.GRIPPER}`]: CONTROL_VALUES.GRIPPER_CLOSE };
+		case "GRIPPER_STOP":
+			return { [`digital_output_${CONTROL_CHANNELS.GRIPPER}`]: CONTROL_VALUES.GRIPPER_CLOSE };
+		default:
+			return null;
 	}
 }
 
-// Button click handlers
-btnQ.addEventListener("click", () => handleControl("Q"));
-btnUp.addEventListener("click", () => handleControl("UP"));
-btnDown.addEventListener("click", () => handleControl("DOWN"));
-btnE.addEventListener("click", () => handleControl("E"));
+async function sendRestControl(action) {
+	const payload = buildControlPayload(action);
+	if (!payload) return;
+	const query = new URLSearchParams();
+	Object.entries(payload).forEach(([key, value]) => {
+		query.set(key, String(value));
+	});
+
+	const url = `${REST_URL}?${query.toString()}`;
+
+	try {
+		await fetch(url, { method: "POST" });
+	} catch (error) {
+		console.log("REST control failed", error);
+	}
+}
+
+function bindHoldControl(button, startAction, stopAction) {
+	if (!button) return;
+	let isPressed = false;
+
+	const start = () => {
+		if (isPressed) return;
+		isPressed = true;
+		button.style.transform = "scale(0.95)";
+		sendControl(startAction);
+	};
+
+	const stop = () => {
+		if (!isPressed) return;
+		isPressed = false;
+		button.style.transform = "scale(1)";
+		sendControl(stopAction);
+	};
+
+	button.addEventListener("pointerdown", start);
+	button.addEventListener("pointerup", stop);
+	button.addEventListener("pointerleave", stop);
+	button.addEventListener("pointercancel", stop);
+	button.addEventListener("blur", stop);
+}
+
+bindHoldControl(btnArmOut, "ARM_OUT_START", "ARM_STOP");
+bindHoldControl(btnArmIn, "ARM_IN_START", "ARM_STOP");
+bindHoldControl(btnSpindleUp, "SPINDLE_UP_START", "SPINDLE_STOP");
+bindHoldControl(btnSpindleDown, "SPINDLE_DOWN_START", "SPINDLE_STOP");
+bindHoldControl(btnGripperOpen, "GRIPPER_OPEN_START", "GRIPPER_STOP");
+bindHoldControl(btnGripperClose, "GRIPPER_CLOSE_START", "GRIPPER_STOP");
 spacebarBtn.addEventListener("click", () => saveCurrentWeight());
 if (logoFrame) {
 	logoFrame.addEventListener("click", handleLogoClick);
@@ -384,20 +556,18 @@ document.addEventListener("click", (event) => {
 
 // Keyboard handlers
 document.addEventListener("keydown", (e) => {
-	if (e.key.toLowerCase() === "q") {
-		btnQ.click();
-		btnQ.style.transform = "scale(0.95)";
-	} else if (e.key === "ArrowUp") {
+	if (e.key === "ArrowUp") {
 		e.preventDefault();
-		btnUp.click();
-		btnUp.style.transform = "scale(0.95)";
+		if (btnSpindleUp) {
+			btnSpindleUp.style.transform = "scale(0.95)";
+		}
+		sendControl("SPINDLE_UP_START");
 	} else if (e.key === "ArrowDown") {
 		e.preventDefault();
-		btnDown.click();
-		btnDown.style.transform = "scale(0.95)";
-	} else if (e.key.toLowerCase() === "e") {
-		btnE.click();
-		btnE.style.transform = "scale(0.95)";
+		if (btnSpindleDown) {
+			btnSpindleDown.style.transform = "scale(0.95)";
+		}
+		sendControl("SPINDLE_DOWN_START");
 	} else if (e.code === "Space") {
 		e.preventDefault();
 		spacebarBtn.click();
@@ -405,14 +575,20 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keyup", (e) => {
-	if (["q", "e"].includes(e.key.toLowerCase()) || ["ArrowUp", "ArrowDown"].includes(e.key)) {
-		document.querySelectorAll(".control-btn").forEach(btn => {
-			btn.style.transform = "scale(1)";
-		});
+	if (e.key === "ArrowUp") {
+		if (btnSpindleUp) {
+			btnSpindleUp.style.transform = "scale(1)";
+		}
+		sendControl("SPINDLE_STOP");
+	} else if (e.key === "ArrowDown") {
+		if (btnSpindleDown) {
+			btnSpindleDown.style.transform = "scale(1)";
+		}
+		sendControl("SPINDLE_STOP");
 	}
 });
 
-endpointText.textContent = WS_URL;
+endpointText.textContent = `${WS_URL} | ${REST_URL}`;
 updateStoredList();
 loadStoredWeights();
 connectWebSocket();
