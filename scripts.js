@@ -17,15 +17,15 @@ const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 
 // Hardcoded action URLs (from user's Postman mapping)
 const ACTION_URLS = {
-	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=255&digital_output_3=0&digital_output_4=0`,
-	SPINDLE_UP_START: `${REST_URL}?digital_output_2=127&digital_output_3=0&digital_output_4=0`,
-	SPINDLE_STOP: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=0`,
-	GRIPPER_OPEN_START: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=90`,
-	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=40`,
-	ARM_IN_START: `${REST_URL}?digital_output_2=0&digital_output_3=10&digital_output_4=0`,
-	ARM_OUT_START: `${REST_URL}?digital_output_2=0&digital_output_3=90&digital_output_4=0`,
-	ARM_STOP: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=0`,
-	GRIPPER_STOP: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=0`,
+	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=255`,
+	SPINDLE_UP_START: `${REST_URL}?digital_output_2=127`,
+	SPINDLE_STOP: `${REST_URL}?digital_output_2=0`,
+	GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=90`,
+	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=45`,
+	ARM_IN_START: `${REST_URL}?digital_output_3=10`,
+	ARM_OUT_START: `${REST_URL}?digital_output_3=90`,
+	ARM_STOP: `${REST_URL}?digital_output_3=0`,
+	GRIPPER_STOP: `${REST_URL}?digital_output_4=0`,
 };
 
 // Control mapping is handled by hardcoded ACTION_URLS in sendRestControl
@@ -396,19 +396,7 @@ function sendControl(action) {
 // legacy encoder and payload builder removed — using hardcoded ACTION_URLS instead
 
 async function sendRestControl(action) {
-	// Use hardcoded URLs per the user's mapping to match Postman-tested links.
-	const ACTION_URLS = {
-		SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=255&digital_output_3=0&digital_output_4=0`,
-		SPINDLE_UP_START: `${REST_URL}?digital_output_2=127&digital_output_3=0&digital_output_4=0`,
-		SPINDLE_STOP: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=0`,
-		GRIPPER_OPEN_START: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=90`,
-		GRIPPER_CLOSE_START: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=40`,
-		ARM_IN_START: `${REST_URL}?digital_output_2=0&digital_output_3=10&digital_output_4=0`,
-		ARM_OUT_START: `${REST_URL}?digital_output_2=0&digital_output_3=90&digital_output_4=0`,
-		ARM_STOP: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=0`,
-		GRIPPER_STOP: `${REST_URL}?digital_output_2=0&digital_output_3=0&digital_output_4=0`,
-	};
-
+	// Use the shared ACTION_URLS mapping and only send the specific parameter
 	const url = ACTION_URLS[action];
 	if (!url) return;
 
@@ -436,6 +424,25 @@ bindControl(btnSpindleDown, "SPINDLE_DOWN_START");
 bindControl(btnSpindleStop, "SPINDLE_STOP");
 bindControl(btnGripperOpen, "GRIPPER_OPEN_START");
 bindControl(btnGripperClose, "GRIPPER_CLOSE_START");
+
+const btnSpindleBump = document.getElementById("btnSpindleBump");
+
+if (btnSpindleBump) {
+    btnSpindleBump.addEventListener("click", () => {
+        // Visuele klik-animatie voor de knop
+        btnSpindleBump.style.transform = "scale(0.95)";
+        setTimeout(() => (btnSpindleBump.style.transform = "scale(1)"), 120);
+
+        // 1. Stuur het commando om de motor te starten
+        sendControl("SPINDLE_UP_START");
+
+        // 2. Wacht 500 milliseconden en stuur dan automatisch het STOP commando
+        setTimeout(() => {
+            sendControl("SPINDLE_STOP");
+        }, 500); 
+    });
+}
+
 spacebarBtn.addEventListener("click", () => saveCurrentWeight());
 if (logoFrame) {
 	logoFrame.addEventListener("click", handleLogoClick);
