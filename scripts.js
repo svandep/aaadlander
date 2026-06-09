@@ -15,25 +15,27 @@ const footerSignalText = document.getElementById("footerSignalText");
 const API_BASE = "PHP%20connections";
 const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 
-const CONTROL_CHANNELS = {
-	SPINDLE: 2,
-	ARM: 3,
-	GRIPPER: 4,
+// Hardcoded action URLs (from user's Postman mapping)
+const ACTION_URLS = {
+	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=255`,
+	SPINDLE_UP_START: `${REST_URL}?digital_output_2=127`,
+	SPINDLE_STOP: `${REST_URL}?digital_output_2=0`,
+	GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=90`,
+	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=45`,
+	ARM_IN_START: `${REST_URL}?digital_output_3=10`,
+	ARM_OUT_START: `${REST_URL}?digital_output_3=90`,
+	ARM_STOP: `${REST_URL}?digital_output_3=0`,
+	GRIPPER_STOP: `${REST_URL}?digital_output_4=0`,
 };
 
-const CONTROL_VALUES = {
-	SPINDLE_SPEED: 127,
-	ARM_OUT: 90,
-	ARM_IN: 0,
-	GRIPPER_OPEN: 45,
-	GRIPPER_CLOSE: 90,
-};
+// Control mapping is handled by hardcoded ACTION_URLS in sendRestControl
 
 // Control buttons
 const btnArmOut = document.getElementById("btnArmOut");
 const btnArmIn = document.getElementById("btnArmIn");
 const btnSpindleUp = document.getElementById("btnSpindleUp");
 const btnSpindleDown = document.getElementById("btnSpindleDown");
+const btnSpindleStop = document.getElementById("btnSpindleStop");
 const btnGripperOpen = document.getElementById("btnGripperOpen");
 const btnGripperClose = document.getElementById("btnGripperClose");
 
@@ -208,37 +210,13 @@ function parseWeightFromData(data) {
 		return Number.isNaN(weightNumber) ? null : weightNumber;
 	}
 
-	const payloadBytes = extractPayloadBytes(data.payload ?? data.lpp ?? data.bytes);
-	if (payloadBytes) {
-		return parseLppWeight(payloadBytes);
-	}
-
+	// No LPP payload parsing: Node-RED provides weight fields directly (weight, weight_1, etc.)
 	return null;
 }
 
-function extractPayloadBytes(payload) {
-	if (!payload) return null;
-	if (Array.isArray(payload)) return payload;
-	if (typeof payload === "string") {
-		try {
-			const binary = atob(payload);
-			return Array.from(binary, (char) => char.charCodeAt(0));
-		} catch (error) {
-			return null;
-		}
-	}
-	return null;
-}
 
-function parseLppWeight(bytes) {
-	const LPP_WEIGHT = 154;
-	for (let i = 0; i + 3 < bytes.length; i += 1) {
-		if (bytes[i + 1] === LPP_WEIGHT) {
-			return (bytes[i + 2] << 8) | bytes[i + 3];
-		}
-	}
-	return null;
-}
+
+
 
 function addStoredWeight(entry) {
 	// Add to beginning of array
@@ -415,62 +393,12 @@ function sendControl(action) {
 	sendRestControl(action);
 }
 
-function encodeSpindle(direction, speed) {
-	const cappedSpeed = Math.max(0, Math.min(127, speed));
-	if (direction === "stop") return 0;
-	const directionBit = direction === "down" ? 0x80 : 0x00;
-	return directionBit | cappedSpeed;
-}
-
-function buildControlPayload(action) {
-	switch (action) {
-		case "SPINDLE_UP_START":
-			return {
-				[`digital_output_${CONTROL_CHANNELS.SPINDLE}`]: encodeSpindle(
-					"up",
-					CONTROL_VALUES.SPINDLE_SPEED
-				),
-			};
-		case "SPINDLE_DOWN_START":
-			return {
-				[`digital_output_${CONTROL_CHANNELS.SPINDLE}`]: encodeSpindle(
-					"down",
-					CONTROL_VALUES.SPINDLE_SPEED
-				),
-			};
-		case "SPINDLE_STOP":
-			return {
-				[`digital_output_${CONTROL_CHANNELS.SPINDLE}`]: encodeSpindle(
-					"stop",
-					0
-				),
-			};
-		case "ARM_OUT_START":
-			return { [`digital_output_${CONTROL_CHANNELS.ARM}`]: CONTROL_VALUES.ARM_OUT };
-		case "ARM_IN_START":
-			return { [`digital_output_${CONTROL_CHANNELS.ARM}`]: CONTROL_VALUES.ARM_IN };
-		case "ARM_STOP":
-			return { [`digital_output_${CONTROL_CHANNELS.ARM}`]: CONTROL_VALUES.ARM_IN };
-		case "GRIPPER_OPEN_START":
-			return { [`digital_output_${CONTROL_CHANNELS.GRIPPER}`]: CONTROL_VALUES.GRIPPER_OPEN };
-		case "GRIPPER_CLOSE_START":
-			return { [`digital_output_${CONTROL_CHANNELS.GRIPPER}`]: CONTROL_VALUES.GRIPPER_CLOSE };
-		case "GRIPPER_STOP":
-			return { [`digital_output_${CONTROL_CHANNELS.GRIPPER}`]: CONTROL_VALUES.GRIPPER_CLOSE };
-		default:
-			return null;
-	}
-}
+// legacy encoder and payload builder removed — using hardcoded ACTION_URLS instead
 
 async function sendRestControl(action) {
-	const payload = buildControlPayload(action);
-	if (!payload) return;
-	const query = new URLSearchParams();
-	Object.entries(payload).forEach(([key, value]) => {
-		query.set(key, String(value));
-	});
-
-	const url = `${REST_URL}?${query.toString()}`;
+	// Use the shared ACTION_URLS mapping and only send the specific parameter
+	const url = ACTION_URLS[action];
+	if (!url) return;
 
 	try {
 		await fetch(url, { method: "POST" });
@@ -479,37 +407,42 @@ async function sendRestControl(action) {
 	}
 }
 
-function bindHoldControl(button, startAction, stopAction) {
+function bindControl(button, action) {
 	if (!button) return;
-	let isPressed = false;
-
-	const start = () => {
-		if (isPressed) return;
-		isPressed = true;
+	button.addEventListener("click", () => {
+		// brief visual feedback
 		button.style.transform = "scale(0.95)";
-		sendControl(startAction);
-	};
-
-	const stop = () => {
-		if (!isPressed) return;
-		isPressed = false;
-		button.style.transform = "scale(1)";
-		sendControl(stopAction);
-	};
-
-	button.addEventListener("pointerdown", start);
-	button.addEventListener("pointerup", stop);
-	button.addEventListener("pointerleave", stop);
-	button.addEventListener("pointercancel", stop);
-	button.addEventListener("blur", stop);
+		setTimeout(() => (button.style.transform = "scale(1)"), 120);
+		sendControl(action);
+	});
 }
 
-bindHoldControl(btnArmOut, "ARM_OUT_START", "ARM_STOP");
-bindHoldControl(btnArmIn, "ARM_IN_START", "ARM_STOP");
-bindHoldControl(btnSpindleUp, "SPINDLE_UP_START", "SPINDLE_STOP");
-bindHoldControl(btnSpindleDown, "SPINDLE_DOWN_START", "SPINDLE_STOP");
-bindHoldControl(btnGripperOpen, "GRIPPER_OPEN_START", "GRIPPER_STOP");
-bindHoldControl(btnGripperClose, "GRIPPER_CLOSE_START", "GRIPPER_STOP");
+bindControl(btnArmOut, "ARM_OUT_START");
+bindControl(btnArmIn, "ARM_IN_START");
+bindControl(btnSpindleUp, "SPINDLE_UP_START");
+bindControl(btnSpindleDown, "SPINDLE_DOWN_START");
+bindControl(btnSpindleStop, "SPINDLE_STOP");
+bindControl(btnGripperOpen, "GRIPPER_OPEN_START");
+bindControl(btnGripperClose, "GRIPPER_CLOSE_START");
+
+const btnSpindleBump = document.getElementById("btnSpindleBump");
+
+if (btnSpindleBump) {
+    btnSpindleBump.addEventListener("click", () => {
+        // Visuele klik-animatie voor de knop
+        btnSpindleBump.style.transform = "scale(0.95)";
+        setTimeout(() => (btnSpindleBump.style.transform = "scale(1)"), 120);
+
+        // 1. Stuur het commando om de motor te starten
+        sendControl("SPINDLE_UP_START");
+
+        // 2. Wacht 500 milliseconden en stuur dan automatisch het STOP commando
+        setTimeout(() => {
+            sendControl("SPINDLE_STOP");
+        }, 500); 
+    });
+}
+
 spacebarBtn.addEventListener("click", () => saveCurrentWeight());
 if (logoFrame) {
 	logoFrame.addEventListener("click", handleLogoClick);
