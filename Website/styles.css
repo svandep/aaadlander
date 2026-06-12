@@ -200,6 +200,97 @@ body::before {
 	background: rgba(20, 40, 70, 0.7);
 }
 
+.shortcut-overlay {
+	position: fixed;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	padding: 24px;
+	background: rgba(3, 7, 16, 0.72);
+	backdrop-filter: blur(10px);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.2s ease;
+	z-index: 20;
+}
+
+.shortcut-overlay.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.shortcut-panel {
+	width: min(560px, 100%);
+	border-radius: 24px;
+	padding: 22px 22px 18px;
+	background: rgba(10, 20, 40, 0.96);
+	border: 1px solid rgba(140, 184, 255, 0.28);
+	box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55), inset 0 0 24px rgba(90, 150, 220, 0.12);
+}
+
+.shortcut-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 18px;
+}
+
+.shortcut-eyebrow {
+	font-size: 0.72rem;
+	letter-spacing: 0.4em;
+	text-transform: uppercase;
+	color: rgba(150, 210, 255, 0.7);
+	margin-bottom: 8px;
+}
+
+.shortcut-header h2 {
+	font-size: 1.15rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.shortcut-close {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	border: 1px solid rgba(140, 184, 255, 0.25);
+	background: rgba(45, 90, 150, 0.24);
+	color: var(--text-bright);
+	font-size: 1.6rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.shortcut-list {
+	display: grid;
+	gap: 10px;
+}
+
+.shortcut-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	padding: 10px 14px;
+	border-radius: 14px;
+	background: rgba(5, 12, 26, 0.55);
+	border: 1px solid rgba(140, 184, 255, 0.16);
+}
+
+.shortcut-key {
+	min-width: 120px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--accent);
+}
+
+.shortcut-action {
+	text-align: right;
+	color: var(--text-bright);
+}
+
 .app {
 	display: grid;
 	grid-template-columns: 1fr 1.18fr 1fr;
@@ -247,6 +338,11 @@ body::before {
 .control-btn {
 	width: 84px;
 	height: 84px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	line-height: 1.05;
 	border-radius: 18px;
 	border: 1px solid rgba(140, 184, 255, 0.35);
 	background: rgba(45, 90, 150, 0.25);
@@ -261,6 +357,17 @@ body::before {
 .control-btn:hover {
 	transform: translateY(-3px);
 	background: rgba(70, 120, 180, 0.35);
+}
+
+#btnSpindleBump,
+#btnSpindleStop,
+#btnGripperOpen,
+#btnGripperClose {
+	font-size: 1.2rem;
+}
+
+#btnSpindleBump {
+	font-size: 1rem;
 }
 
 .monitor-section {
