@@ -17,7 +17,7 @@ const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 
 // Hardcoded action URLs (from user's Postman mapping)
 const ACTION_URLS = {
-	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=200`,
+	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=225`,
 	SPINDLE_UP_START: `${REST_URL}?digital_output_2=100`,
 	SPINDLE_STOP: `${REST_URL}?digital_output_2=0`,
 	GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=90`,
@@ -38,6 +38,7 @@ const btnSpindleDown = document.getElementById("btnSpindleDown");
 const btnSpindleStop = document.getElementById("btnSpindleStop");
 const btnGripperOpen = document.getElementById("btnGripperOpen");
 const btnGripperClose = document.getElementById("btnGripperClose");
+const gripperCloseDegree = document.getElementById("gripperCloseDegree");
 
 let socket = null;
 let reconnectTimer = null;
@@ -397,7 +398,7 @@ function sendControl(action) {
 
 async function sendRestControl(action) {
 	// Use the shared ACTION_URLS mapping and only send the specific parameter
-	const url = ACTION_URLS[action];
+	const url = getActionUrl(action);
 	if (!url) return;
 
 	try {
@@ -405,6 +406,16 @@ async function sendRestControl(action) {
 	} catch (error) {
 		console.log("REST control failed", error);
 	}
+}
+
+function getActionUrl(action) {
+	if (action === "GRIPPER_CLOSE_START" && gripperCloseDegree) {
+		const degree = Number(gripperCloseDegree.value);
+		const safeDegree = Math.min(85, Math.max(45, degree));
+		return `${REST_URL}?digital_output_4=${safeDegree}`;
+	}
+
+	return ACTION_URLS[action];
 }
 
 function bindControl(button, action) {

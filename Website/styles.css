@@ -335,6 +335,28 @@ body::before {
 	color: var(--text-bright);
 }
 
+.control-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	color: var(--text-bright);
+}
+
+.control-field label {
+	font-size: 1.05rem;
+}
+
+.control-field select {
+	width: 150px;
+	border-radius: 12px;
+	border: 1px solid rgba(140, 184, 255, 0.35);
+	background: rgba(6, 16, 30, 0.8);
+	color: var(--text-bright);
+	font: inherit;
+	padding: 10px 12px;
+	cursor: pointer;
+}
+
 .control-btn {
 	width: 84px;
 	height: 84px;
