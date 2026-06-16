@@ -21,7 +21,7 @@ const ACTION_URLS = {
 	SPINDLE_UP_START: `${REST_URL}?digital_output_2=100`,
 	SPINDLE_STOP: `${REST_URL}?digital_output_2=0`,
 	GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=90`,
-	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=45`,
+	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=45`, // This is a default value; the actual degree will be determined dynamically based on user input in getActionUrl
 	ARDUINO_LINK_LED_ON: `${REST_URL}?digital_output_5=1`,
 	ARDUINO_LINK_LED_OFF: `${REST_URL}?digital_output_5=0`,
 	ARM_IN_START: `${REST_URL}?digital_output_3=10`,
@@ -50,9 +50,6 @@ let logoClickTimer = null;
 let staleTimer = null;
 const STALE_TIMEOUT_MS = 10000;
 let hasReceivedData = false;
-let arduinoLinkLedState = null;
-let arduinoLinkLedHeartbeatTimer = null;
-const ARDUINO_LINK_LED_HEARTBEAT_MS = 3000;
 
 function setStatus(state, text) {
 	statusText.textContent = text;
@@ -93,29 +90,6 @@ function scheduleReconnect() {
 	}, 2000);
 }
 
-function setArduinoLinkLed(isOn) {
-	if (arduinoLinkLedState === isOn) return;
-
-	arduinoLinkLedState = isOn;
-	sendRestControl(isOn ? "ARDUINO_LINK_LED_ON" : "ARDUINO_LINK_LED_OFF");
-}
-
-function startArduinoLinkLedHeartbeat() {
-	if (arduinoLinkLedHeartbeatTimer) return;
-
-	arduinoLinkLedHeartbeatTimer = setInterval(() => {
-		if (hasReceivedData) {
-			sendRestControl("ARDUINO_LINK_LED_ON");
-		}
-	}, ARDUINO_LINK_LED_HEARTBEAT_MS);
-}
-
-function stopArduinoLinkLedHeartbeat() {
-	if (!arduinoLinkLedHeartbeatTimer) return;
-	clearInterval(arduinoLinkLedHeartbeatTimer);
-	arduinoLinkLedHeartbeatTimer = null;
-}
-
 function startStaleTimer() {
 	if (staleTimer) {
 		clearTimeout(staleTimer);
@@ -124,9 +98,6 @@ function startStaleTimer() {
 	staleTimer = setTimeout(() => {
 		if (socket && socket.readyState === WebSocket.OPEN) {
 			setStatus("is-error", "Disconnected");
-			hasReceivedData = false;
-			stopArduinoLinkLedHeartbeat();
-			setArduinoLinkLed(false);
 		}
 	}, STALE_TIMEOUT_MS);
 }
@@ -140,8 +111,6 @@ function stopStaleTimer() {
 function connectWebSocket() {
 	setStatus("is-connecting", "Connecting...");
 	hasReceivedData = false;
-	stopArduinoLinkLedHeartbeat();
-	setArduinoLinkLed(false);
 
 	try {
 		socket = new WebSocket(WS_URL);
@@ -163,8 +132,6 @@ function connectWebSocket() {
 		if (!hasReceivedData) {
 			hasReceivedData = true;
 			setStatus("", "Connected");
-			setArduinoLinkLed(true);
-			startArduinoLinkLedHeartbeat();
 		}
 
 		const weight = parseWeightMessage(event.data);
@@ -179,18 +146,12 @@ function connectWebSocket() {
 
 	socket.addEventListener("close", () => {
 		setStatus("is-error", "Disconnected");
-		hasReceivedData = false;
-		stopArduinoLinkLedHeartbeat();
-		setArduinoLinkLed(false);
 		stopStaleTimer();
 		scheduleReconnect();
 	});
 
 	socket.addEventListener("error", () => {
 		setStatus("is-error", "Error");
-		hasReceivedData = false;
-		stopArduinoLinkLedHeartbeat();
-		setArduinoLinkLed(false);
 		stopStaleTimer();
 	});
 }
@@ -542,10 +503,6 @@ document.addEventListener("click", (event) => {
 // Keyboard handlers moved to keyboardcontrols.js
 
 endpointText.textContent = `${WS_URL} | ${REST_URL}`;
-window.addEventListener("beforeunload", () => {
-	stopArduinoLinkLedHeartbeat();
-	setArduinoLinkLed(false);
-});
 updateStoredList();
 loadStoredWeights();
 connectWebSocket();
