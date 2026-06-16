@@ -18,7 +18,7 @@ const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 // Hardcoded action URLs (from user's Postman mapping)
 const ACTION_URLS = {
 	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=200`,
-	SPINDLE_UP_START: `${REST_URL}?digital_output_2=125`,
+	SPINDLE_UP_START: `${REST_URL}?digital_output_2=100`,
 	SPINDLE_STOP: `${REST_URL}?digital_output_2=0`,
 	GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=90`,
 	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=45`,
