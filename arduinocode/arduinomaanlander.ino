@@ -43,10 +43,13 @@ const uint64_t addresses[] = {
 
 unsigned long previousMillis = 0;
 const unsigned long sampleTime = 5000;
+unsigned long lastConnectionHeartbeatMillis = 0;
+const unsigned long CONNECTION_LED_TIMEOUT_MS = 8000;
 
 // Control pins - adapt these to your hardware wiring
 const uint8_t ARM_PIN = 9;
 const uint8_t GRIPPER_PIN = 10;
+const uint8_t CONNECTION_LED_PIN = A3;
 
 const uint8_t SPINDLE_IN3_PIN = 4;
 const uint8_t SPINDLE_IN4_PIN = 6;
@@ -64,10 +67,16 @@ void print2Hex(unsigned v) {
   Serial.print("0123456789ABCDEF"[v & 0xF]);
 }
 
+void setConnectionLed(bool isOn) {
+  digitalWrite(CONNECTION_LED_PIN, isOn ? HIGH : LOW);
+}
+
 void setupControlPins() {
   pinMode(SPINDLE_IN3_PIN, OUTPUT);
   pinMode(SPINDLE_IN4_PIN, OUTPUT);
   pinMode(SPINDLE_ENB_PIN, OUTPUT);
+  pinMode(CONNECTION_LED_PIN, OUTPUT);
+  setConnectionLed(false);
 
   // Activeer de interne pull-up weerstanden (pinnen zijn stabiel HIGH in rust)
   pinMode(eindOnder, INPUT_PULLUP);
@@ -114,6 +123,12 @@ void loop() {
   if (now - previousMillis >= sampleTime) {
     previousMillis = millis();
     sendWeight();
+  }
+
+  if (lastConnectionHeartbeatMillis != 0 && now - lastConnectionHeartbeatMillis > CONNECTION_LED_TIMEOUT_MS) {
+    setConnectionLed(false);
+    lastConnectionHeartbeatMillis = 0;
+    Serial.println("Connection LED OFF (heartbeat timeout)");
   }
 
   // --- ACTIEVE VEILIGHEIDSCHECK (TIJDENS BEWEGING) ---
@@ -292,6 +307,18 @@ void applyDigitalOutput(uint8_t channel, uint8_t value) {
           delay(50);
         }
       }
+    }
+  }
+
+  if (channel == 5) {
+    if (value > 0) {
+      setConnectionLed(true);
+      lastConnectionHeartbeatMillis = millis();
+      Serial.println("Connection LED ON");
+    } else {
+      setConnectionLed(false);
+      lastConnectionHeartbeatMillis = 0;
+      Serial.println("Connection LED OFF");
     }
   }
 }
