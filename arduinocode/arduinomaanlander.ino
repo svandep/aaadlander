@@ -45,6 +45,9 @@ unsigned long previousMillis = 0;
 const unsigned long sampleTime = 5000;
 unsigned long lastConnectionHeartbeatMillis = 0;
 const unsigned long CONNECTION_LED_TIMEOUT_MS = 8000;
+unsigned long lastConnectionLedBlinkMillis = 0;
+const unsigned long CONNECTION_LED_BLINK_MS = 500;
+bool connectionLedBlinkState = false;
 
 // Control pins - adapt these to your hardware wiring
 const uint8_t ARM_PIN = 9;
@@ -126,9 +129,16 @@ void loop() {
   }
 
   if (lastConnectionHeartbeatMillis != 0 && now - lastConnectionHeartbeatMillis > CONNECTION_LED_TIMEOUT_MS) {
-    setConnectionLed(false);
     lastConnectionHeartbeatMillis = 0;
-    Serial.println("Connection LED OFF (heartbeat timeout)");
+    lastConnectionLedBlinkMillis = now;
+    connectionLedBlinkState = false;
+    Serial.println("Connection LED BLINK (heartbeat timeout)");
+  }
+
+  if (lastConnectionHeartbeatMillis == 0 && now - lastConnectionLedBlinkMillis >= CONNECTION_LED_BLINK_MS) {
+    lastConnectionLedBlinkMillis = now;
+    connectionLedBlinkState = !connectionLedBlinkState;
+    setConnectionLed(connectionLedBlinkState);
   }
 
   // --- ACTIEVE VEILIGHEIDSCHECK (TIJDENS BEWEGING) ---
@@ -314,11 +324,14 @@ void applyDigitalOutput(uint8_t channel, uint8_t value) {
     if (value > 0) {
       setConnectionLed(true);
       lastConnectionHeartbeatMillis = millis();
+      lastConnectionLedBlinkMillis = lastConnectionHeartbeatMillis;
+      connectionLedBlinkState = true;
       Serial.println("Connection LED ON");
     } else {
-      setConnectionLed(false);
       lastConnectionHeartbeatMillis = 0;
-      Serial.println("Connection LED OFF");
+      lastConnectionLedBlinkMillis = millis();
+      connectionLedBlinkState = false;
+      Serial.println("Connection LED BLINK");
     }
   }
 }
