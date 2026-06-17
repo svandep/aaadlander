@@ -31,9 +31,10 @@ The main UI lives in [Website/index.html](Website/index.html) and is driven by p
 ## Setup
 
 1. Import [script.sql](script.sql) into MySQL, or run [Website/PHP connections/setup.php](Website/PHP%20connections/setup.php) after configuring the database.
-2. Update [Website/PHP connections/db.php](Website/PHP%20connections/db.php) with the correct MySQL host, database, username, and password.
-3. Serve the `Website` folder through a PHP-capable web server.
-4. Confirm the websocket and REST endpoints in [Website/scripts.js](Website/scripts.js) still point to the correct Node-RED server.
+2. Update [Website/config.json](Website/config.json) with the correct Node-RED URLs, control values, and connection timing.
+3. Update `.env` with the local MySQL host, database, username, password, and charset.
+4. Serve the `Website` folder through a PHP-capable web server.
+5. Confirm the websocket and REST endpoints in [Website/config.json](Website/config.json) point to the correct Node-RED server.
 
 ## Behavior
 

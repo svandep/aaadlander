@@ -1,0 +1,29 @@
+{
+	"nodeRed": {
+		"host": "145.49.127.250",
+		"port": 1880,
+		"group": "groep12",
+		"restUrl": "http://145.49.127.250:1880/groep12",
+		"websocketUrl": "ws://145.49.127.250:1880/ws/groep12"
+	},
+	"controls": {
+		"spindleUp": 100,
+		"spindleDown": 225,
+		"spindleStop": 0,
+		"armIn": 10,
+		"armOut": 100,
+		"armStop": 0,
+		"gripperOpen": 90,
+		"gripperCloseDefault": 45,
+		"gripperCloseMin": 45,
+		"gripperCloseMax": 85,
+		"gripperCloseStep": 5,
+		"connectionLedOn": 1,
+		"connectionLedOff": 0
+	},
+	"connection": {
+		"staleTimeoutMs": 10000,
+		"reconnectDelayMs": 2000,
+		"arduinoLinkLedHeartbeatMs": 3000
+	}
+}

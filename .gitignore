@@ -1,0 +1,3 @@
+.env
+Website/php-server.out.log
+Website/php-server.err.log

@@ -1,5 +1,5 @@
-const WS_URL = "ws://145.49.127.250:1880/ws/groep12";
-const REST_URL = "http://145.49.127.250:1880/groep12";
+let WS_URL = "ws://145.49.127.250:1880/ws/groep12";
+let REST_URL = "http://145.49.127.250:1880/groep12";
 
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
@@ -15,22 +15,35 @@ const footerSignalText = document.getElementById("footerSignalText");
 const API_BASE = "PHP%20connections";
 const EASTER_EGG_URL = "Easter%20Egg/easteregg.html";
 
-// Hardcoded action URLs (from user's Postman mapping)
-const ACTION_URLS = {
-	SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=225`,
-	SPINDLE_UP_START: `${REST_URL}?digital_output_2=100`,
-	SPINDLE_STOP: `${REST_URL}?digital_output_2=0`,
-	GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=90`,
-	GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=45`,
-	ARDUINO_LINK_LED_ON: `${REST_URL}?digital_output_5=1`,
-	ARDUINO_LINK_LED_OFF: `${REST_URL}?digital_output_5=0`,
-	ARM_IN_START: `${REST_URL}?digital_output_3=10`,
-	ARM_OUT_START: `${REST_URL}?digital_output_3=100`,
-	ARM_STOP: `${REST_URL}?digital_output_3=0`,
-	GRIPPER_STOP: `${REST_URL}?digital_output_4=0`,
+const DEFAULT_CONFIG = {
+	nodeRed: {
+		restUrl: REST_URL,
+		websocketUrl: WS_URL,
+	},
+	controls: {
+		spindleDown: 225,
+		spindleUp: 100,
+		spindleStop: 0,
+		gripperOpen: 90,
+		gripperCloseDefault: 45,
+		gripperCloseMin: 45,
+		gripperCloseMax: 85,
+		gripperCloseStep: 5,
+		connectionLedOn: 1,
+		connectionLedOff: 0,
+		armIn: 10,
+		armOut: 100,
+		armStop: 0,
+	},
+	connection: {
+		staleTimeoutMs: 10000,
+		reconnectDelayMs: 2000,
+		arduinoLinkLedHeartbeatMs: 3000,
+	},
 };
 
-// Control mapping is handled by hardcoded ACTION_URLS in sendRestControl
+let appConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+let ACTION_URLS = {};
 
 // Control buttons
 const btnArmOut = document.getElementById("btnArmOut");
@@ -48,11 +61,12 @@ let storedWeights = [];
 let logoClickCount = 0;
 let logoClickTimer = null;
 let staleTimer = null;
-const STALE_TIMEOUT_MS = 10000;
+let STALE_TIMEOUT_MS = DEFAULT_CONFIG.connection.staleTimeoutMs;
+let RECONNECT_DELAY_MS = DEFAULT_CONFIG.connection.reconnectDelayMs;
 let hasReceivedData = false;
 let arduinoLinkLedState = null;
 let arduinoLinkLedHeartbeatTimer = null;
-const ARDUINO_LINK_LED_HEARTBEAT_MS = 3000;
+let ARDUINO_LINK_LED_HEARTBEAT_MS = DEFAULT_CONFIG.connection.arduinoLinkLedHeartbeatMs;
 
 function setStatus(state, text) {
 	statusText.textContent = text;
@@ -90,7 +104,7 @@ function scheduleReconnect() {
 	reconnectTimer = setTimeout(() => {
 		reconnectTimer = null;
 		connectWebSocket();
-	}, 2000);
+	}, RECONNECT_DELAY_MS);
 }
 
 function setArduinoLinkLed(isOn) {
@@ -437,6 +451,78 @@ function sendControl(action) {
 
 // legacy encoder and payload builder removed — using hardcoded ACTION_URLS instead
 
+function mergeConfig(defaultConfig, loadedConfig) {
+	return {
+		...defaultConfig,
+		...loadedConfig,
+		nodeRed: {
+			...defaultConfig.nodeRed,
+			...(loadedConfig.nodeRed || {}),
+		},
+		controls: {
+			...defaultConfig.controls,
+			...(loadedConfig.controls || {}),
+		},
+		connection: {
+			...defaultConfig.connection,
+			...(loadedConfig.connection || {}),
+		},
+	};
+}
+
+async function loadConfig() {
+	try {
+		const response = await fetch("config.json", { cache: "no-store" });
+		if (!response.ok) {
+			throw new Error(`Config request failed: ${response.status}`);
+		}
+		appConfig = mergeConfig(DEFAULT_CONFIG, await response.json());
+	} catch (error) {
+		console.log("Using default config", error);
+		appConfig = DEFAULT_CONFIG;
+	}
+
+	WS_URL = appConfig.nodeRed.websocketUrl;
+	REST_URL = appConfig.nodeRed.restUrl;
+	STALE_TIMEOUT_MS = appConfig.connection.staleTimeoutMs;
+	RECONNECT_DELAY_MS = appConfig.connection.reconnectDelayMs;
+	ARDUINO_LINK_LED_HEARTBEAT_MS = appConfig.connection.arduinoLinkLedHeartbeatMs;
+	ACTION_URLS = buildActionUrls();
+	configureGripperCloseOptions();
+}
+
+function buildActionUrls() {
+	const controls = appConfig.controls;
+	return {
+		SPINDLE_DOWN_START: `${REST_URL}?digital_output_2=${controls.spindleDown}`,
+		SPINDLE_UP_START: `${REST_URL}?digital_output_2=${controls.spindleUp}`,
+		SPINDLE_STOP: `${REST_URL}?digital_output_2=${controls.spindleStop}`,
+		GRIPPER_OPEN_START: `${REST_URL}?digital_output_4=${controls.gripperOpen}`,
+		GRIPPER_CLOSE_START: `${REST_URL}?digital_output_4=${controls.gripperCloseDefault}`,
+		ARDUINO_LINK_LED_ON: `${REST_URL}?digital_output_5=${controls.connectionLedOn}`,
+		ARDUINO_LINK_LED_OFF: `${REST_URL}?digital_output_5=${controls.connectionLedOff}`,
+		ARM_IN_START: `${REST_URL}?digital_output_3=${controls.armIn}`,
+		ARM_OUT_START: `${REST_URL}?digital_output_3=${controls.armOut}`,
+		ARM_STOP: `${REST_URL}?digital_output_3=${controls.armStop}`,
+		GRIPPER_STOP: `${REST_URL}?digital_output_4=0`,
+	};
+}
+
+function configureGripperCloseOptions() {
+	if (!gripperCloseDegree) return;
+
+	const { gripperCloseMin, gripperCloseMax, gripperCloseStep, gripperCloseDefault } = appConfig.controls;
+	gripperCloseDegree.innerHTML = "";
+
+	for (let degree = gripperCloseMin; degree <= gripperCloseMax; degree += gripperCloseStep) {
+		const option = document.createElement("option");
+		option.value = String(degree);
+		option.textContent = `${degree} degrees`;
+		option.selected = degree === gripperCloseDefault;
+		gripperCloseDegree.appendChild(option);
+	}
+}
+
 async function sendRestControl(action) {
 	// Use the shared ACTION_URLS mapping and only send the specific parameter
 	const url = getActionUrl(action);
@@ -452,7 +538,8 @@ async function sendRestControl(action) {
 function getActionUrl(action) {
 	if (action === "GRIPPER_CLOSE_START" && gripperCloseDegree) {
 		const degree = Number(gripperCloseDegree.value);
-		const safeDegree = Math.min(85, Math.max(45, degree));
+		const { gripperCloseMin, gripperCloseMax } = appConfig.controls;
+		const safeDegree = Math.min(gripperCloseMax, Math.max(gripperCloseMin, degree));
 		return `${REST_URL}?digital_output_4=${safeDegree}`;
 	}
 
@@ -541,11 +628,17 @@ document.addEventListener("click", (event) => {
 
 // Keyboard handlers moved to keyboardcontrols.js
 
-endpointText.textContent = `${WS_URL} | ${REST_URL}`;
+async function initApp() {
+	await loadConfig();
+	endpointText.textContent = `${WS_URL} | ${REST_URL}`;
+	updateStoredList();
+	loadStoredWeights();
+	connectWebSocket();
+}
+
 window.addEventListener("beforeunload", () => {
 	stopArduinoLinkLedHeartbeat();
 	setArduinoLinkLed(false);
 });
-updateStoredList();
-loadStoredWeights();
-connectWebSocket();
+
+initApp();
